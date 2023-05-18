@@ -63,7 +63,7 @@ Spring says, implement all these methods.
 
     @Override
     public boolean isEnabled() {
-        return this.user.isEnabled();
+        return true;
     }
 
 }
