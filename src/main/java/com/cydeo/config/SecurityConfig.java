@@ -1,24 +1,22 @@
 package com.cydeo.config;
 
+import com.cydeo.service.SecurityService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration //we want to create bean from this class.
 public class SecurityConfig {
 
+    private final SecurityService securityService;
+    private final AuthSuccessHandler authSuccessHandler;
 
+    public SecurityConfig(SecurityService securityService, AuthSuccessHandler authSuccessHandler) {
+        this.securityService = securityService;
+        this.authSuccessHandler = authSuccessHandler;
+    }
 
 
 //    @Bean
@@ -39,16 +37,12 @@ public class SecurityConfig {
 //    }
 
     @Bean
-    public SecurityFilterChain filterChain (HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain (HttpSecurity http) throws Exception { //we use Security FilterChain to introduce our own form.
         return http
-                .authorizeRequests() //everything in this application needs to be authorized, related with roles
-//                .antMatchers("/user/**").hasRole("ADMIN")// when we say "user" here, we give it access to everything under user controller ("save", "create" etc)
-//                .antMatchers("project/**").hasRole("MANAGER") //giving access to manager role
-//                .antMatchers("/task/employee/**").hasRole("EMPLOYEE")
-//                .antMatchers("/task/**").hasRole("MANAGER")
-                .antMatchers("/user/**").hasAuthority("Admin")
+                .authorizeRequests() //everything in this application needs to be authorized, related with role
+                .antMatchers("/user/**").hasAuthority("Admin") //it is method, which spring security is giving to describe the roles. ** means everything under user controller. if we want only create e.g. instead of ** we put "/user/create"
                 .antMatchers("/project/**").hasAuthority("Manager")
-                .antMatchers("/task/employee/**").hasAuthority("Employee")
+                .antMatchers("/task/employee/**").hasAuthority("Employee") //whatever we describe as role, it needs to be matched as database;
                 .antMatchers("/task/**").hasAuthority("Manager")
 //                .antMatchers("/task/**").hasAnyRole("MANAGER", "EMPLOYEE") //when we want to give access to more than one role;
 //                .antMatchers("/task/**").hasAuthority("ROLE_EMPLOYEE") //hasAuthority is same, but here we need to use format ROLE_EMPLOYEE.
@@ -57,12 +51,22 @@ public class SecurityConfig {
                 .anyRequest().authenticated()//anything beside "/", "/login" and ect needs to be authenticated.
                 .and()
 //                .httpBasic() //as we see different sign in page, means spring uses some http behind the scene. We need to use our own form. Pop-up box is basically this httpBasic.
-                .formLogin()
-                .loginPage("/login")
-                .defaultSuccessUrl("/welcome") //whenever we successfully landed, we'll be landed on welcome page
-                .failureUrl("/login?error=true")
-                .permitAll()
-                .and().build();
+                .formLogin()//I used formLogin to introduce my validation form.
+                .loginPage("/login")// we need login view. This is representation of my Login page
+//                .defaultSuccessUrl("/welcome") //whenever user authenticated with the correct username and password, we land welcome page view.
+                .failureUrl("/login?error=true")//if user put wrong information, we want to navigate to this url.
+                .successHandler(authSuccessHandler)//when we want to customize which page to land which role.
+                .permitAll()//this changes should be accessible for everyone.
+                .and().logout() //managing logOut
+                    .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                    .logoutSuccessUrl("/login")
+                .and()
+                .rememberMe()
+                    .tokenValiditySeconds(120)
+                    .key("cydeo")
+                    .userDetailsService(securityService)
+                .and()
+                .build();
     }
     //when we say "/", "/login", and ect. we tell spring security do not ask security check specifically here and that's why it does not require username/password
     //

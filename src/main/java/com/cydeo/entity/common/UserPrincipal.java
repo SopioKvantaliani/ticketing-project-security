@@ -26,19 +26,25 @@ hey spring I heard that you are working with certain user fields that I need to 
 Okay, can you please tell me the contract we need to do between us and then I can provide you.
 Spring says, implement all these methods.
  */
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List <GrantedAuthority> authorityList =new ArrayList<>();
+
+        List<GrantedAuthority> authorityList = new ArrayList<>();
+
         GrantedAuthority authority = new SimpleGrantedAuthority(this.user.getRole().getDescription());
+
+        authorityList.add(authority);
+
         return authorityList;
+    }
         /*
         whenever we give user, it will convert to Spring required user.
          */
-    }
 
     @Override
     public String getPassword() { //get userPassword from DB and then set it to Spring Security User field.
-        return this.user.getUserName();
+        return this.user.getPassWord();
     }
 
     @Override

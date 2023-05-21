@@ -30,6 +30,6 @@ public class SecurityServiceIml implements SecurityService {
             throw new UsernameNotFoundException(username); //spring provides UsernameNotFoundException
         }
 
-        return new UserPrincipal(user);
+        return new UserPrincipal(user); //get the user from db,and convert to user springs understands by using user principal
     }
 }
