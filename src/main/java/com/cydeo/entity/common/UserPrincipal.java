@@ -72,4 +72,8 @@ Spring says, implement all these methods.
         return true;
     }
 
+    public Long getId(){ //converts Db user to Spring User
+        return this.user.getId(); //whatever coming from db
+    }
+
 }
